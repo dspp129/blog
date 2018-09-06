@@ -6,16 +6,17 @@ tags:
   - Hexo
 ---
 
+{% blockquote %}
 工欲善其事，必先利其器。
+{% endblockquote %}
 
 
 这两天微调了下[NexT.Mist](https://github.com/theme-next/hexo-theme-next)主题，包括字体、样式、cdn加速等。
-
-记录一下过程。
+记录一下过程，并分享一些其他小技巧。
 
 <!-- more -->
 
-## 增加emoji表情
+## Emoji表情
 
 首先删除自带marked渲染器
 ```bash
@@ -63,7 +64,7 @@ markdown:
 现在就可以打出emoji表情啦 `:blush:` :blush: 
 具体每个表情的代码，可以查询[官方字典](https://www.webfx.com/tools/emoji-cheat-sheet/)，或者[Github](https://github.com/guodongxiaren/README/blob/master/emoji.md)版本。
 
-## Hexo 速度优化
+## 速度优化
 
 双线部署([GitHub Pages](https://pages.github.com) + [Coding Pages](https://coding.net/help/doc/pages))已然成了静态个人博客标配。以下将介绍一些其他个人优化心得。
 
@@ -105,6 +106,10 @@ vendors:
   # Internal version: 4.6.2
   fontawesome: //cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css
 
+  # Internal version: 1
+  algolia_instant_js: //cdn.jsdelivr.net/npm/instantsearch.js@2.10.1/dist/instantsearch.min.js
+  algolia_instant_css: //cdn.jsdelivr.net/npm/instantsearch.js@2.10.1/dist/instantsearch.min.css
+
   # Internal version: 1.0.2
   pace: //cdn.bootcss.com/pace/1.0.2/pace.min.js
   pace_css: //cdn.bootcss.com/pace/1.0.2/themes/black/pace-theme-minimal.min.css
@@ -118,7 +123,7 @@ vendors:
 
 ### 文件压缩
 
-利用 `gulp` 来压缩你的 `Hexo` 博客的静态文件 ( html / css / js )，缩小文件大小，达到提高访问速度的目的。
+利用 `gulp` 来压缩你的 `Hexo` 博客的静态文件 ( html / css / js )，减少站点文件占用托管平台空间，节约是一种美德，同时也达到了提高访问速度的目的。
 
 首先安装 `gulp`
 
@@ -173,11 +178,6 @@ gulp.task('generate', function(cb) {
   })
 });
 
-// 清除public/lib文件夹
-gulp.task('clean-lib', function() {
-  return del(['public/lib']);
-});
-
 gulp.task('minify-css', () => {
   return gulp.src('./public/**/*.css')
     .pipe(cleanCSS({compatibility: 'ie8'}))
@@ -221,10 +221,9 @@ gulp.task('compress', function() {
   runSequence(['minify-html', 'minify-css', 'minify-js', 'minify-images']);
 });
 
-// 执行顺序：清除public目录 -> 生成原始博客文件 -> 清除public/lib目录 -> 并发执行压缩
-// 如未配置cdn加速，请移除 clean-lib
+// 执行顺序：清除public目录 -> 生成原始博客文件 -> 并发执行压缩
 gulp.task('build', function(cb) {
-  runSequence('clean', 'generate', 'clean-lib', 'compress', cb)
+  runSequence('clean', 'generate', 'compress', cb)
 });
 
 gulp.task('default', ['build']);
@@ -236,14 +235,12 @@ gulp.task('default', ['build']);
 $ gulp
 ```
 
-
 ## 样式调整
 
 {% blockquote %}
 让文章像书信般呈现，
 让文字如墨水般浸染。
 {% endblockquote %}
-
 
 ### 文章阴影
 
@@ -283,19 +280,88 @@ $ gulp
   .post-body img { margin: 0; }
 ```
 
+## 源文件备份
 
-## blog编写指南
+最近浏览Hexo文章时，常常看到一些博主因为某些误操作导致源文件丢失或批量修改难以撤销的情况。
+
+相信大部分博主都是将站点部署在[GitHub Pages](https://pages.github.com)上的，其实[GitHub](https://github.com)另外一个最核心的功能就是代码版本控制。
+
+以下向非专业(或不想folk)人士介绍一下最简单快捷的备份方式。
+
+### 什么是代码版本控制
+
+经过授权的客户端每完成一个无编译错误的版本想保存的时候，可进行check in操作，将当前版本保存在服务器端上并成为最新版本（并非覆盖历史版本）。任一客户端可以方便地得到服务器上的文件的任意版本。代码版本控制一般还实现了一个重要的功能就是版本比较，任一客户端可以利用版本控制工具对某文件的不同版本进行版本比较，它会标记出不同版本的同名文件的不同点，可以轻易地看出版本内容的演化，这一招很常用。
+
+如果不希望自己的源代码被任何人看到，可以创建私有仓库。目前[GitHub](https://github.com)上的私有仓库 `$7 / month`，支持信用卡或PayPal支付。像国内的[Coding](https://coding.net)和[码云](https://gitee.com)都支持免费的私有仓库。
+
+选择一个你的仓库，开始备份吧。
+
+
+### 新建代码仓库
+
+以Github为例，创建一个新的代码仓库blog，获得该仓库的SSH地址。
+
+{% blockquote %}
+git@github.com:yourname/blog.git
+{% endblockquote %}
+
+我们建议每个仓库都包含有以下3个文件。
+
+- `README`: 仓库的说明信息。
+- `LICENSE`: 源码的开源协议。
+- `.gitignore`: 当前版本需要忽略管理的文件。
+
+### 初始化本地仓库
+
+1. 首先确认博客根目录下是否有.git文件夹，该文件夹包含了所有commit信息。如果有，请将其删除。
+2. 新建`.gitignore`文件，并保存以下内容。
+
+```config blog/.gitignore
+public
+node_modules
+.deploy_git
+db.json
+debug.log
+package-lock.json
+```
+
+3. 新建`README.md`文件，键入该仓库的说明信息。
+4. 运行以下脚本。
+
+```bash
+$ git init  # 初始化仓库
+$ git add README.md
+$ git add .gitignore
+$ git commit -m "first commit"
+$ git remote add origin git@github.com:yourname/blog.git
+$ git push -u origin master
+```
+
+### Push本地代码到远程
+
+`.gitignore`会告诉该仓库需要忽略版本管理的文件(夹)。我们已经将编译文件、临时文件和引用文件等文件(夹)名加入了该文件，所以以后每当发布新博客后，推送全量文件即可完成备份。
+
+```bash
+$ git add -A
+$ git commit -m "本次提交备注"
+$ git push origin master
+```
+
+如果想了解更多 `.gitignore` 配置信息，[点此查看](https://git-scm.com/docs/gitignore)。
+
+
+## Markdown 编写指南
 
 既然选择了Hexo，也就选择了`markdown`进行文章写作。以下转载了一篇内容比较全的markdown介绍，原文[链接](https://github.com/xirong/my-markdown/blob/master/readme.md)。
 
-### markdown 介绍
+### Markdown 介绍
 > Markdown 是一种轻量级标记语言，它允许人们“使用易读易写的纯文本格式编写文档，然后转换成有效的XHTML(或者HTML)文档”。 - **wikipedia**
 
 - [Daring Fireball: Markdown](http://daringfireball.net/projects/markdown/) Project markdown
 - [Markdown wikipedia 介绍](https://zh.wikipedia.org/wiki/Markdown)
 - [MultiMarkdown](http://fletcherpenney.net/multimarkdown/) 引入更多标记特性和输出选项的改进版Markdown
 
-### why markdown
+### Why markdown
 
 - 纯文本，兼容性极强，可以用任意文本编辑器打开.
 - 语法简单（the syntax is so simple you can barely call it “syntax.”），零学习成本，极好的可读性，让你专注于文字写作而不是页面排版，并且兼容 HTML，simple but powerful .
@@ -316,7 +382,7 @@ $ gulp
 - [有道云笔记](http://note.youdao.com/noteintro.html) 最新版本开始支持，并且支持一些扩展语法。
 
 
-### markdown 使用
+### Markdown 使用
 
 - [GitHub上README写法暨GFM语法解读](https://github.com/guodongxiaren/README) Github Flavored Markdown语法介绍
 - [Github: Mastering Markdown](https://guides.github.com/features/mastering-markdown/) GitHub 帮助中关于 Markdown 的语法帮助
@@ -325,7 +391,7 @@ $ gulp
 - [GitHub Flavored Markdown](https://help.github.com/articles/github-flavored-markdown/) GitHub 使用的 Markdown 语法，略微不同于标准 Markdown 语法。提供了一些更加简洁的语法，类似 URL autolinking, Strikethrough, Fenced code blocks, Syntax highlighting 等等
 - [MultiMarkdown 介绍](http://fletcherpenney.net/multimarkdown/) 对 markdown 进行的扩展功能
 
-### markdown 工具
+### Markdown 工具
 
 - [马克飞象](https://maxiang.info/) web/chrome 离线客户端，markdown 全功能支持，最大特点内容能够同步到印象笔记（evernote）中，笔记的用户重度推荐，按年收费，目前作者 [@weibo](http://weibo.com/u/2788354117) 正在开发跨平台的客户端。
 

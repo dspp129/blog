@@ -88,6 +88,16 @@ deploy:
     #coding: 
     #github: 
 
+
+# Algolia Search
+## https://github.com/theme-next/hexo-theme-next/blob/master/docs/ALGOLIA-SEARCH.md
+algolia:
+  applicationID: '46IPD4V70F'
+  apiKey: 'a129912c3815d86464bc997a75823bc5'
+  indexName: 'coding_dspp129_top'
+  chunkSize: 5000
+
+
 # Local Search
 ## Install: npm install hexo-generator-searchdb --save
 search:
